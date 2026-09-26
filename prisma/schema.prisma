@@ -16,8 +16,12 @@ model Todo {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId      String   @map("user_id") @db.Uuid
   title       String
-  isCompleted Boolean  @default(false) @map("is_completed")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  isCompleted Boolean   @default(false) @map("is_completed")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  // 期限日 (任意)。時刻は持たず日付のみ。
+  dueDate     DateTime? @map("due_date") @db.Date
+  // 緊急度: 1=低, 2=中, 3=高 (DB 側で check 制約あり)
+  priority    Int       @default(2) @db.SmallInt
 
   @@map("todos")
 }
