@@ -2,8 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // ログイン不要でアクセスできるページ
-// (/reset-password は再設定メールのリンク経由でログイン済みになってから開くため含めない)
-const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password"];
+const PUBLIC_PATHS = ["/login", "/signup"];
 
 /**
  * Next.js 16 の Proxy（旧 Middleware）。

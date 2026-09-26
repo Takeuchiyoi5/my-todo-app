@@ -1,34 +1,40 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import {
-  DEFAULT_PRIORITY,
-  dueDateToDb,
-  isPriority,
-  parseDueDate,
-  toTodoDto,
-  type Priority,
-  type TodoDto,
-} from "@/lib/todos";
 
 // --- 画面 (app/page.tsx) と共有する型 ------------------------------------
 // Prisma の Todo をそのまま返すと Date 型などが JSON 化で string になり型が
-// ズレるため、レスポンス用の DTO (lib/todos.ts) を返す。
+// ズレるため、レスポンス用の DTO を別に定義してそれをエクスポートする。
 
-export type { TodoDto };
+export type TodoDto = {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  createdAt: string;
+};
 
 export type ErrorResponse = { error: string };
 
 export type GetTodosResponse = { todos: TodoDto[] };
 
-export type CreateTodoRequestBody = {
-  title: string;
-  dueDate?: string | null;
-  priority?: Priority;
-};
+export type CreateTodoRequestBody = { title: string };
 export type CreateTodoResponse = { todo: TodoDto };
 
 const TITLE_MAX_LENGTH = 200;
+
+function toTodoDto(todo: {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  createdAt: Date;
+}): TodoDto {
+  return {
+    id: todo.id,
+    title: todo.title,
+    isCompleted: todo.isCompleted,
+    createdAt: todo.createdAt.toISOString(),
+  };
+}
 
 /**
  * ログイン中のユーザーを確認する。
@@ -52,14 +58,9 @@ export async function GET() {
     );
   }
 
-  // lib/todos.ts の compareTodos と同じ並び順にすること
   const todos = await prisma.todo.findMany({
     where: { userId: user.id },
-    orderBy: [
-      { dueDate: { sort: "asc", nulls: "last" } },
-      { priority: "desc" },
-      { createdAt: "desc" },
-    ],
+    orderBy: { createdAt: "desc" },
   });
 
   return NextResponse.json<GetTodosResponse>({
@@ -102,28 +103,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const dueDate = parseDueDate(body.dueDate);
-  if (dueDate === "invalid") {
-    return NextResponse.json<ErrorResponse>(
-      { error: "期限日の形式が正しくありません。" },
-      { status: 400 },
-    );
-  }
-
-  if (body.priority !== undefined && !isPriority(body.priority)) {
-    return NextResponse.json<ErrorResponse>(
-      { error: "緊急度は 1〜3 で指定してください。" },
-      { status: 400 },
-    );
-  }
-
   const todo = await prisma.todo.create({
-    data: {
-      userId: user.id,
-      title,
-      dueDate: dueDateToDb(dueDate ?? null),
-      priority: body.priority ?? DEFAULT_PRIORITY,
-    },
+    data: { userId: user.id, title },
   });
 
   return NextResponse.json<CreateTodoResponse>(

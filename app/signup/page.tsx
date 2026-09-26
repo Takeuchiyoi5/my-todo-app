@@ -12,14 +12,12 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setMessage(null);
-    setIsAlreadyRegistered(false);
     setIsSubmitting(true);
 
     // 新規登録処理は supabase-js をこの画面(クライアント)から直接呼び出す
@@ -45,13 +43,6 @@ export default function SignupPage() {
       // プロジェクト側で「メール確認」が無効な場合は、この時点で既にログイン済み
       router.push("/");
       router.refresh();
-      return;
-    }
-
-    // 登録済みのアドレスで signUp すると、Supabase はエラーにせず「成功したように見える」
-    // 応答を返し、メールも送らない。その場合 user.identities が空配列になるので判別できる。
-    if (data.user?.identities?.length === 0) {
-      setIsAlreadyRegistered(true);
       return;
     }
 
@@ -127,26 +118,6 @@ export default function SignupPage() {
             <p className="rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-400">
               {error}
             </p>
-          )}
-
-          {isAlreadyRegistered && (
-            <div className="rounded-lg border border-amber-900 bg-amber-950/50 px-3 py-2 text-sm text-amber-300">
-              このメールアドレスは登録済みの可能性があります。
-              <Link
-                href="/login"
-                className="font-medium text-indigo-400 hover:text-indigo-300"
-              >
-                ログイン
-              </Link>
-              するか、パスワードを忘れた場合は
-              <Link
-                href="/forgot-password"
-                className="font-medium text-indigo-400 hover:text-indigo-300"
-              >
-                パスワード再設定
-              </Link>
-              をお試しください。
-            </div>
           )}
 
           <button
